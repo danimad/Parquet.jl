@@ -1,6 +1,6 @@
 
 # schema and helper methods
-type Schema
+mutable struct Schema
     schema::Vector{SchemaElement}
     name_lookup::Dict{AbstractString,SchemaElement}
 
@@ -75,7 +75,7 @@ end
 @compat abstract type SchemaConverter end
 
 # parquet schema to Protobuf schema converter
-type ProtoConverter <: SchemaConverter
+mutable struct ProtoConverter <: SchemaConverter
     to::IO
 end
 
@@ -145,7 +145,7 @@ end
 
 
 # parquet schema to Thrift schema converter
-type ThriftConverter <: SchemaConverter
+mutable struct ThriftConverter <: SchemaConverter
     to::IO
 end
 
@@ -217,7 +217,7 @@ function _sch_to_thrift(sch::SchemaElement, ios::Vector{IO}, nchildren::Vector{I
 end
 
 # parquet schema to Julia types
-type JuliaConverter <: SchemaConverter
+mutable struct JuliaConverter <: SchemaConverter
     to::Union{Module,IO}
 end
 

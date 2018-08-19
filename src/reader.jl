@@ -5,14 +5,14 @@ const SZ_FOOTER = 4
 const SZ_VALID_PAR = 2*SZ_PAR_MAGIC + SZ_FOOTER
 
 # page is the unit of compression
-type Page
+mutable struct Page
     colchunk::ColumnChunk
     hdr::PageHeader
     pos::Int
     data::Vector{UInt8}
 end
 
-type PageLRU
+mutable struct PageLRU
     refs::Dict{ColumnChunk,DRef}
     function PageLRU()
         new(Dict{ColumnChunk,DRef}())
@@ -32,7 +32,7 @@ end
 # parquet file.
 # Keeps a handle to the open file and the file metadata.
 # Holds a LRU cache of raw bytes of the pages read.
-type ParFile
+mutable struct ParFile
     path::AbstractString
     handle::IOStream
     meta::FileMetaData
@@ -63,7 +63,7 @@ end
 # can access raw (uncompressed) bytes from pages
 
 schema(par::ParFile) = par.schema
-schema{T<:SchemaConverter}(conv::T, par::ParFile, schema_name::Symbol) = schema(conv, par.schema, schema_name)
+schema(conv::T, par::ParFile, schema_name::Symbol) where {T<:SchemaConverter} = schema(conv, par.schema, schema_name)
 
 colname(col::ColumnChunk) = colname(col.meta_data)
 colname(col::ColumnMetaData) = join(col.path_in_schema, '.')
@@ -157,7 +157,7 @@ end
 # layer 2 access
 # can access decoded values from pages
 
-map_dict_vals{T1,T2}(valdict::Vector{T1}, vals::Vector{T2}) = isempty(valdict) ? vals : [valdict[v+1] for v in vals]
+map_dict_vals(valdict::Vector{T1}, vals::Vector{T2}) where {T1,T2} = isempty(valdict) ? vals : [valdict[v+1] for v in vals]
 
 values(par::ParFile, rowgroupidx::Integer, colidx::Integer) = values(par, columns(par, rowgroupidx), colidx)
 values(par::ParFile, cols::Vector{ColumnChunk}, colidx::Integer) = values(par, cols[colidx])
@@ -320,9 +320,9 @@ end
 page_num_values(page::Union{DataPageHeader,DataPageHeaderV2,DictionaryPageHeader}) = page.num_values
 
 # file metadata
-read_thrift{T}(buff::Array{UInt8}, ::Type{T}) = read(TCompactProtocol(TMemoryTransport(buff)), T)
-read_thrift{T}(io::IO, ::Type{T}) = read(TCompactProtocol(TFileTransport(io)), T)
-read_thrift{TR<:TTransport,T}(t::TR, ::Type{T}) = read(TCompactProtocol(t), T)
+read_thrift(buff::Array{UInt8}, ::Type{T}) where {T} = read(TCompactProtocol(TMemoryTransport(buff)), T)
+read_thrift(io::IO, ::Type{T}) where {T} = read(TCompactProtocol(TFileTransport(io)), T)
+read_thrift(t::TR, ::Type{T}) where {TR<:TTransport,T} = read(TCompactProtocol(t), T)
 
 function metadata_length(io)
     sz = filesize(io)
